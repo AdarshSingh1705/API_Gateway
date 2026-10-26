@@ -13,4 +13,4 @@ INSERT INTO management_users (
 SELECT NULL, roles.id, 'gateway-service',
        '$2y$10$kgkpKYK3zLNzLV54ObZbee68JvjRjy79J6kATSfD0grUXKDd6jxOO',
        TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM roles WHERE roles.namfe = 'GATEWAY_SERVICE';
+FROM roles WHERE roles.name = 'GATEWAY_SERVICE';
