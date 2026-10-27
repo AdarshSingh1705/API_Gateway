@@ -3,6 +3,7 @@ package in.adarshsingh.gatekeeper.management.service;
 import in.adarshsingh.gatekeeper.management.dto.requestDto.OrganizationRequest;
 import in.adarshsingh.gatekeeper.management.dto.requestDto.OrganizationStatusRequest;
 import in.adarshsingh.gatekeeper.management.dto.requestDto.TenantAdminRequest;
+import in.adarshsingh.gatekeeper.management.dto.requestDto.TenantOrganizationRequest;
 import in.adarshsingh.gatekeeper.management.dto.responseDto.OrganizationResponse;
 import in.adarshsingh.gatekeeper.management.dto.responseDto.TenantAdminResponse;
 import in.adarshsingh.gatekeeper.management.entity.ManagementUser;
@@ -29,15 +30,18 @@ public class OrganizationService {
     private final ManagementUserRepository managementUserRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantContext tenantContext;
 
     public OrganizationService(OrganizationRepository organizationRepository,
                                ManagementUserRepository managementUserRepository,
                                RoleRepository roleRepository,
-                               PasswordEncoder passwordEncoder){
+                               PasswordEncoder passwordEncoder,
+                               TenantContext tenantContext){
         this.organizationRepository = organizationRepository;
         this.managementUserRepository = managementUserRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.tenantContext = tenantContext;
     }
 
     @Transactional
@@ -54,10 +58,6 @@ public class OrganizationService {
         organization.setUpdatedAt(LocalDateTime.now());
 
         organizationRepository.save(organization);
-
-//        auditService.record(organization, "CREATE_ORGANIZATION", "ORGANIZATION",
-//                organization.getId().toString(), startedAt,
-//                "Organization created in PENDING status");
 
         return OrganizationResponse.from(organization);
 
@@ -119,6 +119,8 @@ public class OrganizationService {
         organization.setUpdatedAt(LocalDateTime.now());
     }
 
+    // Tenant Admin CRUD
+
     @Transactional
     public TenantAdminResponse createTenantAdmin(Long organizationId, TenantAdminRequest request){
         long startedAt = System.nanoTime();
@@ -176,9 +178,35 @@ public class OrganizationService {
     @Transactional
     public void deleteTenantAdmin(Long organizationId){
         long startedAt = System.nanoTime();
+
         ManagementUser user = getTenantAdminEntity(organizationId);
 
         managementUserRepository.delete(user);
+    }
+
+    // Methods for Tenant Admin
+
+    @Transactional(readOnly = true)
+    public OrganizationResponse getOwnOrganization(){
+        return OrganizationResponse.from(tenantContext.getOrganization());
+    }
+
+    @Transactional
+    public OrganizationResponse updateOwnOrganization(TenantOrganizationRequest request){
+        long startedAt = System.nanoTime();
+
+        Organization organization = tenantContext.getOrganization();
+
+        if(!organization.getName().equalsIgnoreCase(request.getName())
+                && organizationRepository.existsByNameIgnoreCase(request.getName())){
+            throw new ApiException(HttpStatus.CONFLICT, "Organization name already exists");
+        }
+
+        organization.setName(request.getName());
+        organization.setUpdatedAt(LocalDateTime.now());
+
+        return OrganizationResponse.from(organization);
+
     }
 
     private ManagementUser getTenantAdminEntity(Long organizationId){
