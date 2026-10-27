@@ -1,0 +1,23 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+**/application-local.properties
+**/application-*.local.properties
+**/secrets/
+**/credentials/
+
+# Private keys and keystores
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+
+# Build output and logs
+**/target/
+**/build/
+*.log
